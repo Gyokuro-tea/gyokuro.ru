@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gyokuro | Cinematic Photography</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-light: #0d0d0d;
+            --text-main: #f0f0f0;
+            --text-muted: #666666;
+            --accent: #c29d58;
+            --font-heading: 'Playfair Display', serif;
+            --font-text: 'Montserrat', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Кинематографический шум */
+        .noise {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Кастомный курсор */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.hovered {
+            width: 50px;
+            height: 50px;
+            background-color: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        /* Навигация */
+        nav {
+            position: fixed;
+            width: 100%;
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            mix-blend-mode: difference;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4rem;
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0; height: 1px;
+            bottom: -5px; left: 0;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Анимации при скролле */
+        .reveal {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Главный экран */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 10%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    
+    /* Устанавливаем черный цвет фона */
+    background-color: #050505; 
+    
+    /* Указываем путь к вашему фото */
+    background-image: url('images/photo_2026-03-09_01-38-38 (2).jpg'); 
+    
+    /* Запрещаем картинке размножаться */
+    background-repeat: no-repeat; 
+    
+    /* Картинка будет занимать правую половину экрана и подстраиваться под высоту */
+    background-size: contain; 
+    
+    /* Прижимаем картинку к правому краю */
+    background-position: right center; 
+    
+    opacity: 0.5; /* Можете поднять до 0.8, если на черном фоне фото будет слишком тусклым */
+    z-index: -1;
+    
+    /* Плавное увеличение для кинематографичного эффекта */
+    transform: scale(1.02);
+    animation: slowZoom 20s linear infinite alternate;
+}
+
+        @keyframes slowZoom {
+            from { transform: scale(1.05); }
+            to { transform: scale(1.15); }
+        }
+
+        .hero-title-bg {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-heading);
+            font-size: 15vw;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+            z-index: -1;
+            user-select: none;
+        }
+
+        .hero h1 {
+            font-family: var(--font-heading);
+            font-size: 6rem;
+            font-weight: 400;
+            line-height: 1;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 span {
+            display: block;
+            color: var(--accent);
+            font-style: italic;
+            font-size: 4rem;
+            margin-top: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 500px;
+            font-weight: 300;
+            margin-bottom: 3rem;
+        }
+
+        /* Услуги */
+        .services {
+            padding: 10rem 10%;
+            background-color: var(--bg-light);
+        }
+
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            margin-bottom: 6rem;
+            font-weight: 400;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 1px;
+            background-color: var(--accent);
+            margin-top: 20px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4rem;
+        }
+
+        .service-card {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 2rem;
+            transition: border-color 0.4s;
+        }
+
+        .service-card:hover {
+            border-top-color: var(--accent);
+        }
+
+        .service-card h3 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .service-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .price {
+            font-family: var(--font-heading);
+            color: var(--accent);
+            font-size: 1.5rem;
+            font-style: italic;
+            display: block;
+            margin-top: auto;
+        }
+
+        /* Журнальное Портфолио */
+        .portfolio {
+            padding: 10rem 5%;
+        }
+
+        .editorial-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2rem;
+        }
+
+        .grid-item {
+            position: relative;
+            overflow: hidden;
+            background: #111;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%);
+            transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1), filter 1.2s;
+        }
+
+        .grid-item:hover img {
+            transform: scale(1.05);
+            filter: grayscale(0%);
+        }
+
+        /* Асимметрия сетки */
+        .item-1 { grid-column: 1 / 8; aspect-ratio: 16/9; }
+        .item-2 { grid-column: 9 / 13; aspect-ratio: 3/4; transform: translateY(100px); }
+        .item-3 { grid-column: 1 / 5; aspect-ratio: 3/4; margin-top: 5rem; }
+        .item-4 { grid-column: 6 / 13; aspect-ratio: 16/9; }
+        .item-5 { grid-column: 2 / 7; aspect-ratio: 4/5; margin-top: 5rem; }
+        .item-6 { grid-column: 8 / 12; aspect-ratio: 3/4; transform: translateY(-100px); }
+
+        .item-caption {
+            position: absolute;
+            bottom: 2rem; left: 2rem;
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+            mix-blend-mode: difference;
+            pointer-events: none; /* Чтобы не мешал клику по картинке */
+        }
+
+        .grid-item:hover .item-caption {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- ВСПЛЫВАЮЩЕЕ ОКНО (ЛАЙТБОКС) --- */
+        .lightbox {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(5, 5, 5, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5000; /* Выше контента, но ниже курсора и шума */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            transform: scale(0.95);
+            transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .lightbox.active .lightbox-img {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 40px;
+            right: 50px;
+            font-family: var(--font-text);
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--text-main);
+            transition: color 0.3s;
+            line-height: 1;
+        }
+
+        .lightbox-close:hover {
+            color: var(--accent);
+        }
+
+        /* Контакты */
+        .contact {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: var(--bg-dark);
+        }
+
+        .contact-email {
+    font-family: var(--font-heading);
+    font-size: 7vw;
+    color: var(--bg-dark); /* Цвет фона, маскирующий заливку */
+    /* Используем text-shadow для создания безупречного внешнего контура */
+    text-shadow:
+        -1px -1px 0 var(--text-main),
+         1px -1px 0 var(--text-main),
+        -1px  1px 0 var(--text-main),
+         1px  1px 0 var(--text-main);
+    text-decoration: none;
+    transition: all 0.5s ease;
+    margin-bottom: 2rem;
+    letter-spacing: 2px;
+}
+
+.contact-email:hover {
+    color: var(--text-main);
+    text-shadow: none; /* Убираем контур при наведении */
+}
+
+        footer {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1024px) {
+            .services-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .item-1, .item-2, .item-3, .item-4, .item-5, .item-6 {
+                grid-column: 1 / -1;
+                transform: none;
+                margin-top: 0;
+                aspect-ratio: 4/5;
+            }
+            .hero h1 { font-size: 4rem; }
+            .hero h1 span { font-size: 3rem; }
+            .nav-links { display: none; }
+            .cursor { display: none; } 
+            .lightbox-close { top: 20px; right: 20px; font-size: 2.5rem; }
+        }
+        .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 250px; /* Высота градиента, можно изменить для более плавного эффекта */
+    /* Градиент от прозрачного к цвету следующей секции */
+    background: linear-gradient(to bottom, transparent, var(--bg-light));
+    pointer-events: none; /* Чтобы слой не мешал работе кастомного курсора */
+    z-index: 1; /* Кладем поверх картинки, но под текст */
+}
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <div class="cursor"></div>
+
+    <nav>
+        <a href="#" class="logo interactive">GYOKURO.</a>
+        <div class="nav-links">
+            <a href="#services" class="interactive">Услуги</a>
+            <a href="#portfolio" class="interactive">Портфолио</a>
+            <a href="index.html" class="interactive">Веб-архитектура</a> <a href="#contact" class="interactive">Связаться</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-title-bg">GYOKURO</div>
+        <div class="reveal">
+            <h1>Эстетика <br><span>Света и Тени</span></h1>
+            <p>Создаю визуальные истории для брендов и ресторанов. Кинематографичный стиль, глубокие фактуры, бескомпромиссное качество.</p>
+        </div>
+    </header>
+
+    <section id="services" class="services">
+        <h2 class="section-title reveal">Экспертиза</h2>
+        <div class="services-grid">
+            
+            <div class="service-card reveal" style="transition-delay: 0.1s;">
+                <h3>Гастрономия</h3>
+                <p>Съемка для премиального меню. Акцент на естественной фактуре блюд, стиле «рустик» и правильном объеме. От 3 000 ₽ / час.</p>
+                <span class="price">Food & Taste</span>
+            </div>
+
+            <div class="service-card reveal" style="transition-delay: 0.2s;">
+                <h3>Предметная съемка</h3>
+                <p>Работа с брендами. Использование сложной геометрии света, фризлайта и глубоких теней для выделения вашего продукта. От 500 ₽ / кадр.</p>
+                <span class="price">Product Geometry</span>
+            </div>
+
+            <div class="service-card reveal" style="transition-delay: 0.3s;">
+                <h3>Low-Key Портрет</h3>
+                <p>Концептуальная студийная фотография. Строгие линии, драматичный свет, работа с цветными фильтрами. От 4 000 ₽ / час.</p>
+                <span class="price">Dark Mood</span>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="portfolio" class="portfolio">
+        <h2 class="section-title reveal">Избранные архивы</h2>
+        <div class="editorial-grid">
+            <div class="grid-item item-1 reveal interactive">
+                <img src="images/photo_2026-03-09_01-38-40 (2).jpg" alt="Гастрономия">
+                <span class="item-caption">Rustic Food</span>
+            </div>
+            <div class="grid-item item-2 reveal interactive">
+                <img src="images/photo_2026-03-09_01-38-46.jpg" alt="Портрет">
+                <span class="item-caption">Low-Key Portrait</span>
+            </div>
+            <div class="grid-item item-3 reveal interactive">
+                <img src="images/photo_2026-03-09_01-38-44.jpg" alt="Репортаж">
+                <span class="item-caption">Kitchen Reportage</span>
+            </div>
+            <div class="grid-item item-4 reveal interactive">
+                <img src="images/photo_2026-03-09_01-38-44 (2).jpg" alt="Предметка">
+                <span class="item-caption">Neon & Geometry</span>
+            </div>
+            <div class="grid-item item-5 reveal interactive">
+                <img src="images/photo_2026-03-09_01-38-39.jpg" alt="Детали">
+                <span class="item-caption">Textures</span>
+            </div>
+            <div class="grid-item item-6 reveal interactive">
+                <img src="images/photo_2026-03-09_01-37-59.jpg" alt="Архитектура">
+                <span class="item-caption">Urban Lines</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact reveal">
+        <a href="https://t.me/GYOKUROof" target="_blank" class="contact-email interactive">@GYOKUROof</a>
+        <p style="color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Пермь / Worldwide</p>
+    </section>
+
+    <footer>
+        <p>© 2026 GYOKURO VISUALS. ALL RIGHTS RESERVED.</p>
+    </footer>
+
+    <div class="lightbox" id="lightbox">
+        <span class="lightbox-close interactive" id="lightbox-close">&times;</span>
+        <img class="lightbox-img" id="lightbox-img" src="" alt="Увеличенное фото">
+    </div>
+
+    <script>
+        // Логика кастомного курсора
+        const cursor = document.querySelector('.cursor');
+        const interactives = document.querySelectorAll('.interactive, a, button, .grid-item'); // Добавили grid-item для курсора
+
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        interactives.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        // Intersection Observer для анимации при скролле
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const observer = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Логика Лайтбокса (всплывающего окна)
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxClose = document.getElementById('lightbox-close');
+        const galleryItems = document.querySelectorAll('.grid-item');
+
+        // Открытие фото
+        galleryItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const imgElement = item.querySelector('img');
+                // Берем оригинальное изображение, можно было бы подставлять HD версию
+                lightboxImg.src = imgElement.src; 
+                lightbox.classList.add('active');
+            });
+        });
+
+        // Функция закрытия
+        const closeLightbox = () => {
+            lightbox.classList.remove('active');
+        };
+
+        // Закрытие по клику на крестик
+        lightboxClose.addEventListener('click', closeLightbox);
+
+        // Закрытие по клику на фон (мимо фото)
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+
+        // Закрытие по нажатию клавиши ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                closeLightbox();
+            }
+        });
+    </script>
+</body>
+</html>
