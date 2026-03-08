@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gyokuro | Digital Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-light: #0d0d0d;
+            --text-main: #f0f0f0;
+            --text-muted: #666666;
+            --accent: #c29d58; /* ВАШ ФИРМЕННЫЙ ЗОЛОТОЙ */
+            --font-heading: 'Playfair Display', serif;
+            --font-text: 'Montserrat', sans-serif;
+            
+            /* Цвета оригинальных сайтов */
+            --color-ikode: #FFE500;
+            --color-koditok: #8438FF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9999; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .cursor {
+            width: 20px; height: 20px;
+            border: 1px solid var(--accent);
+            border-radius: 50%; position: fixed;
+            pointer-events: none; z-index: 10000;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.hovered {
+            width: 50px; height: 50px;
+            background-color: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        nav {
+            position: fixed; width: 100%; padding: 2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100; mix-blend-mode: difference;
+        }
+
+        .logo {
+            font-family: var(--font-heading); font-size: 1.5rem;
+            color: #fff; text-decoration: none; letter-spacing: 4px;
+        }
+
+        .nav-links { display: flex; gap: 4rem; }
+        .nav-links a {
+            color: #fff; text-decoration: none; font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 2px; position: relative;
+        }
+
+        /* --- ЗОЛОТАЯ ПОЛОСКА ДЛЯ НАВИГАЦИИ (CSS) --- */
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .reveal {
+            opacity: 0; transform: translateY(60px);
+            transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        .hero {
+            height: 100vh; display: flex; flex-direction: column;
+            justify-content: center; padding: 0 10%; position: relative;
+        }
+
+        .hero-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #050505 70%);
+            z-index: -1;
+        }
+
+        .hero h1 { font-family: var(--font-heading); font-size: 5.5rem; font-weight: 400; line-height: 1.1; margin-bottom: 2rem; position: relative; z-index: 1; }
+        .hero h1 span { display: block; color: var(--accent); font-style: italic; font-size: 3.5rem; margin-top: 1rem; }
+        .hero p { font-size: 1.1rem; color: var(--text-muted); max-width: 550px; margin-bottom: 3rem; position: relative; z-index: 1; }
+
+        .projects { padding: 10rem 10%; background-color: var(--bg-light); }
+        .section-title { font-family: var(--font-heading); font-size: 3.5rem; margin-bottom: 6rem; font-weight: 400; }
+
+        .project-card { display: flex; gap: 4rem; margin-bottom: 8rem; align-items: center; }
+        .project-card:nth-child(even) { flex-direction: row-reverse; }
+
+        .mockup-wrapper {
+            flex: 1.5;
+            aspect-ratio: 16/10;
+            perspective: 1000px;
+        }
+
+        .mockup-window {
+            width: 100%; height: 100%;
+            background: #000;
+            border-radius: 10px;
+            display: flex; flex-direction: column;
+            border: 1px solid rgba(194, 157, 88, 0.15);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+            transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .mockup-wrapper:hover .mockup-window {
+            transform: scale(1.02) translateY(-10px);
+            border-color: rgba(194, 157, 88, 0.4);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+        }
+
+        .mockup-header {
+            height: 30px; background: #0a0a0a;
+            border-bottom: 1px solid rgba(194, 157, 88, 0.1);
+            display: flex; align-items: center; padding: 0 15px; gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.r { background: rgba(255, 95, 86, 0.5); }
+        .dot.y { background: rgba(255, 189, 46, 0.5); }
+        .dot.g { background: rgba(39, 201, 63, 0.5); }
+
+        /* =========================================
+           ДИЗАЙН IKODE С ЦВЕТОВЫМИ АКЦЕНТАМИ
+           ========================================= */
+        .ikode-site { 
+            flex-grow: 1; background: #000; display: flex; flex-direction: column; font-family: 'Montserrat', sans-serif; overflow: hidden; 
+        }
+        .ikode-header-block { 
+            background: #000; padding: 10px; text-align: center; border-bottom: 1px solid rgba(255, 229, 0, 0.1);
+        }
+        .ikode-logo-container { 
+            background: var(--bg-dark); display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; font-weight: 800; font-size: 0.9rem; color: #fff; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .ikode-logo-container .cmd { 
+            background: var(--color-ikode); color: #000; padding: 0 4px; font-size: 0.7rem; 
+        }
+        .ikode-subtitle { 
+            font-size: 0.45rem; font-weight: 700; color: #888; margin-top: 8px; line-height: 1.2; letter-spacing: 0.5px; text-transform: uppercase; 
+        }
+        .ikode-hero-block { 
+            background: radial-gradient(circle at center, rgba(255, 229, 0, 0.1) 0%, #000 70%); 
+            color: #fff; padding: 20px 10px; text-align: center; 
+        }
+        .ikode-hero-block h2 { 
+            font-size: 1.3rem; font-weight: 900; line-height: 1.1; margin-bottom: 8px; text-transform: uppercase; color: var(--color-ikode);
+        }
+        .ikode-hero-block p { 
+            color: #ccc; font-size: 0.6rem; font-weight: 600; 
+        }
+        .ikode-content-block { 
+            background: #000; flex-grow: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; 
+        }
+        .ikode-title-wrap { 
+            background: #0a0a0a; width: 100%; margin-bottom: 12px; padding: 10px; border: 1px solid rgba(255, 229, 0, 0.2);
+        }
+        .ikode-title-wrap h3 { 
+            font-size: 0.7rem; font-weight: 900; color: #fff; text-transform: uppercase; margin-bottom: 4px; 
+        }
+        .ikode-title-wrap p { 
+            font-size: 0.45rem; color: #888; font-weight: 500; line-height: 1.3; 
+        }
+        .ikode-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; 
+        }
+        .ikode-card-item { 
+            background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; transition: border 0.3s;
+        }
+        .ikode-card-item:hover { border-color: rgba(255, 229, 0, 0.4); }
+        .ikode-card-age { 
+            background: var(--color-ikode); color: #000; font-size: 0.4rem; font-weight: 900; padding: 3px 6px; display: inline-block; width: fit-content; margin: -1px 0 0 -1px; 
+        }
+        .ikode-card-body { 
+            padding: 8px; flex-grow: 1; display: flex; flex-direction: column; 
+        }
+        .ikode-card-title { 
+            font-size: 0.6rem; font-weight: 800; color: #fff; margin-bottom: 4px; 
+        }
+        .ikode-card-desc { 
+            font-size: 0.4rem; color: #888; line-height: 1.3; margin-bottom: 8px; flex-grow: 1;
+        }
+        .ikode-card-btn { 
+            background: transparent; border: 1px solid rgba(255, 229, 0, 0.5); text-align: center; padding: 6px; font-size: 0.45rem; font-weight: 800; color: var(--color-ikode); text-transform: uppercase; margin-bottom: 8px; margin-inline: 8px; transition: all 0.3s;
+        }
+        .ikode-card-btn:hover { background: var(--color-ikode); color: #000; }
+
+        /* =========================================
+           ДИЗАЙН KODITOK С ЦВЕТОВЫМИ АКЦЕНТАМИ
+           ========================================= */
+        .koditok-site { 
+            flex-grow: 1; background: #000; display: flex; flex-direction: column; font-family: 'Montserrat', sans-serif; overflow: hidden; 
+        }
+        .koditok-hero-block { 
+            background: linear-gradient(135deg, rgba(132, 56, 255, 0.25) 0%, #050505 100%); 
+            color: #fff; text-align: center; padding: 30px 15px; position: relative; border-bottom: 1px solid rgba(132, 56, 255, 0.2);
+        }
+        .koditok-hero-block h2 { 
+            font-size: 1.3rem; font-weight: 800; line-height: 1.2; margin-bottom: 8px; 
+        }
+        .koditok-hero-block h2 span { color: #c4a1ff; font-weight: 900;}
+        .koditok-hero-block p { 
+            font-size: 0.5rem; font-weight: 500; margin-bottom: 12px; opacity: 0.9; color: #eee;
+        }
+        .koditok-hero-subtitle { 
+            background: rgba(132, 56, 255, 0.15); display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 0.45rem; margin-bottom: 15px; color: #d0b3ff; font-weight: 700;
+        }
+        .koditok-btn-pill { 
+            background: var(--color-koditok); color: #fff; padding: 8px 20px; border-radius: 20px; font-weight: 800; font-size: 0.55rem; display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(132, 56, 255, 0.4); transition: transform 0.3s;
+        }
+        .koditok-btn-pill:hover { transform: scale(1.05); }
+        .koditok-content-block { 
+            padding: 15px; display: flex; flex-direction: column; align-items: center; flex-grow: 1; background: #000; 
+        }
+        .koditok-content-block h3 { 
+            font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 6px; 
+        }
+        .koditok-content-block p { 
+            font-size: 0.45rem; color: #888; margin-bottom: 15px; text-align: center; max-width: 80%; 
+        }
+        .koditok-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; 
+        }
+        .koditok-card-item { 
+            background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; transition: border 0.3s;
+        }
+        .koditok-card-item:hover { border-color: rgba(132, 56, 255, 0.4); }
+        .koditok-card-top { 
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; 
+        }
+        .koditok-age-pill { 
+            font-size: 0.4rem; color: #888; background: #111; padding: 3px 8px; border-radius: 10px; font-weight: 600; border: 1px solid #222; 
+        }
+        .koditok-icon { 
+            width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; 
+        }
+        .koditok-icon.yellow { background: rgba(255, 193, 7, 0.15); color: #FFC107; }
+        .koditok-icon.green { background: rgba(40, 167, 69, 0.15); color: #28A745; }
+        .koditok-card-title { 
+            font-size: 0.6rem; font-weight: 800; color: #fff; margin-bottom: 4px; line-height: 1.2;
+        }
+        .koditok-card-desc { 
+            font-size: 0.4rem; color: #888; line-height: 1.3; margin-bottom: 8px;
+        }
+        .koditok-card-link { 
+            font-size: 0.45rem; font-weight: 700; margin-top: auto; color: #c4a1ff;
+        }
+
+        /* Общие стили информации о проекте */
+        .project-info { flex: 1; }
+        .project-info h3 { font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 1rem; }
+        .project-info p { color: var(--text-muted); margin-bottom: 2rem; line-height: 1.8; font-size: 0.95rem; }
+        .project-link {
+            display: inline-block; padding: 1rem 2.5rem; border: 1px solid var(--accent);
+            color: var(--accent); text-decoration: none; text-transform: uppercase;
+            letter-spacing: 2px; font-size: 0.75rem; transition: all 0.4s ease;
+        }
+        .project-link:hover { background: var(--accent); color: var(--bg-dark); }
+
+        .orders-list { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .order-item { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.85rem; }
+        .order-client { color: var(--text-main); }
+        .order-type { color: var(--accent); font-style: italic; }
+
+        .contact { height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background-color: var(--bg-dark); }
+       .contact-email {
+    font-family: var(--font-heading);
+    font-size: 7vw;
+    color: var(--bg-dark); /* Цвет фона, маскирующий заливку */
+    /* Используем text-shadow для создания безупречного внешнего контура */
+    text-shadow:
+        -1px -1px 0 var(--text-main),
+         1px -1px 0 var(--text-main),
+        -1px  1px 0 var(--text-main),
+         1px  1px 0 var(--text-main);
+    text-decoration: none;
+    transition: all 0.5s ease;
+    margin-bottom: 2rem;
+    letter-spacing: 2px;
+}
+
+.contact-email:hover {
+    color: var(--text-main);
+    text-shadow: none; /* Убираем контур при наведении */
+}
+        footer { 
+    padding: 2rem; 
+    text-align: center; 
+    color: var(--text-muted); 
+    font-size: 0.8rem; 
+    letter-spacing: 1px; 
+    border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: 10vh; /* Отступ перенесен наверх */
+}
+        @media (max-width: 1024px) {
+            .project-card, .project-card:nth-child(even) { flex-direction: column; gap: 2rem; }
+            .hero h1 { font-size: 4rem; }
+            .cursor { display: none; } 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <div class="cursor"></div>
+
+    <nav>
+        <a href="#" class="logo interactive">GYOKURO.</a>
+        <div class="nav-links">
+            <a href="#projects" class="interactive">Проекты</a>
+            <a href="photo.html" class="interactive">Фотография</a> <a href="#contact" class="interactive">Связаться</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-bg"></div>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--font-heading); font-size: 15vw; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03); z-index: 0; user-select: none;">GYOKURO</div>
+        <div class="reveal">
+            <h1>Gyokuro. <br><span>Архитектура решений</span></h1>
+            <p>Проектирование и разработка современных веб-интерфейсов. Строгий код, выверенная эстетика и безупречная логика.</p>
+        </div>
+    </header>
+
+    <section id="projects" class="projects">
+        <h2 class="section-title reveal">Последние проекты и заказы</h2>
+        
+        <div class="project-card reveal">
+            <div class="mockup-wrapper interactive">
+                <div class="mockup-window">
+                    <div class="mockup-header">
+                        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                    </div>
+                    <div class="ikode-site">
+                        <div class="ikode-header-block">
+                            <div class="ikode-logo-container"><span class="cmd">>_</span> iKODe</div>
+                            <div class="ikode-subtitle">МЕЖДУНАРОДНАЯ IT-АКАДЕМИЯ</div>
+                        </div>
+                        <div class="ikode-hero-block">
+                            <h2>Такому в школе<br>не научат!</h2>
+                            <p>Открой для себя мир IT! ⚙️</p>
+                        </div>
+                        <div class="ikode-content-block">
+                            <div class="ikode-title-wrap">
+                                <h3>Открытые мастер-классы</h3>
+                                <p>Все занятия проходят в практическом формате: ребёнок уходит с готовым проектом.</p>
+                            </div>
+                            <div class="ikode-grid">
+                                <div class="ikode-card-item">
+                                    <div class="ikode-card-age">7+ ЛЕТ</div>
+                                    <div class="ikode-card-body">
+                                        <div class="ikode-card-title">>_ Labubu + Искусственный интеллект</div>
+                                        <div class="ikode-card-desc">Дети создают уникальный образ персонажа с помощью ИИ.</div>
+                                    </div>
+                                    <div class="ikode-card-btn">ЗАПИСАТЬСЯ</div>
+                                </div>
+                                <div class="ikode-card-item">
+                                    <div class="ikode-card-age">6+ ЛЕТ</div>
+                                    <div class="ikode-card-body">
+                                        <div class="ikode-card-title">>_ Создание игры с нуля</div>
+                                        <div class="ikode-card-desc">Участники проходят все этапы разработки простой игры.</div>
+                                    </div>
+                                    <div class="ikode-card-btn">ЗАПИСАТЬСЯ</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="project-info">
+                <h3>iKODe Севастополь</h3>
+                <p>Многофункциональная платформа для образовательных IT-проектов. Разработка структуры, логики взаимодействия и адаптивного интерфейса.</p>
+                <div class="orders-list">
+                    <div class="order-item">
+                        <span class="order-client">iKODe</span>
+                        <span class="order-type">Платформа и брендинг</span>
+                    </div>
+                </div>
+                <a href="https://ikode.fun" target="_blank" class="project-link interactive" style="margin-top: 1.5rem;">Смотреть сайт</a>
+            </div>
+        </div>
+
+        <div class="project-card reveal">
+            <div class="mockup-wrapper interactive">
+                <div class="mockup-window">
+                    <div class="mockup-header">
+                        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                    </div>
+                    <div class="koditok-site">
+                        <div class="koditok-hero-block">
+                            <h2><span>Пермский код</span>:<br>Цифровая экспедиция<br>с Учи.ру ⚡</h2>
+                            <p>Пермь, 1 — 13 марта 2026</p>
+                            <div class="koditok-hero-subtitle">Неделя бесплатных мастер-классов</div><br>
+                            <div class="koditok-btn-pill">Занять место 🚀</div>
+                        </div>
+                        <div class="koditok-content-block">
+                            <h3>Мастер-классы интенсива</h3>
+                            <p>Наша основная идея — зажечь ребят, показать, что программирование может быть увлекательным.</p>
+                            <div class="koditok-grid">
+                                <div class="                                <div class="koditok-card-item">
+                                    <div class="koditok-card-top">
+                                        <div class="koditok-age-pill">6-8 лет</div>
+                                        <div class="koditok-icon yellow">⚡</div>
+                                    </div>
+                                    <div class="koditok-card-title">Светящийся человечек</div>
+                                    <div class="koditok-card-desc">Создаем робота с паяльником!</div>
+                                    <div class="koditok-card-link">Подробнее →</div>
+                                </div>
+                                <div class="koditok-card-item">
+                                    <div class="koditok-card-top">
+                                        <div class="koditok-age-pill">7-9 лет</div>
+                                        <div class="koditok-icon green">🍏</div>
+                                    </div>
+                                    <div class="koditok-card-title">Фруктовый ниндзя</div>
+                                    <div class="koditok-card-desc">Разрезай фрукты кодом!</div>
+                                    <div class="koditok-card-link">Подробнее →</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="project-info">
+                <h3>Пермский код</h3>
+                <p>Лендинг для цифровой экспедиции и серии бесплатных мастер-классов по программированию и электронике, организованных совместно с региональным представительством Учи.ру в Перми.</p>
+                <div class="orders-list">
+                    <div class="order-item">
+                        <span class="order-client">Учи.ру (г. Пермь)</span>
+                        <span class="order-type">Landing Page</span>
+                    </div>
+                </div>
+                <a href="https://koditok.ru" target="_blank" class="project-link interactive" style="margin-top: 1.5rem;">Перейти на Koditok</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact reveal">
+        <a href="https://t.me/GYOKUROof" target="_blank" class="contact-email interactive">@GYOKUROof</a>
+        <p style="color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Доступен для новых проектов</p>
+    </section>
+
+    <footer>
+        <p>© 2026 GYOKURO VISUALS. ALL RIGHTS RESERVED.</p>
+    </footer>
+
+    <script>
+        const cursor = document.querySelector('.cursor');
+        const interactives = document.querySelectorAll('.interactive, a, button');
+
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        interactives.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
+        const observer = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            });
+        }, observerOptions);
+
+        // Плавный скролл с заданным отступом (offset)
+document.querySelectorAll('.nav-links a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+            const offset = 90; // Смещение на 250px ниже начала секции
+            const elementPosition = targetElement.getBoundingClientRect().top;
+            
+            // Знак "плюс" обеспечивает прокрутку ниже начала блока
+            const offsetPosition = elementPosition + window.pageYOffset + offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth"
+            });
+        }
+    });
+});
+
+        document.querySelectorAll('.reveal').forEach(el => { observer.observe(el); });
+    </script>
+</body>
+</html>
