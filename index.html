@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gyokuro | Digital Architecture</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,10 @@
             --bg-light: #0d0d0d;
             --text-main: #f0f0f0;
             --text-muted: #666666;
-            --accent: #c29d58; /* ВАШ ФИРМЕННЫЙ ЗОЛОТОЙ */
+            --accent: #c29d58; 
             --font-heading: 'Playfair Display', serif;
             --font-text: 'Montserrat', sans-serif;
             
-            /* Цвета оригинальных сайтов */
             --color-ikode: #FFE500;
             --color-koditok: #8438FF;
         }
@@ -30,18 +29,26 @@
             cursor: none;
         }
 
-        html { scroll-behavior: smooth; }
+        html { 
+            scroll-behavior: smooth; 
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
 
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: var(--font-text);
             line-height: 1.6;
+            width: 100%;
+            max-width: 100%;
             overflow-x: hidden;
+            position: relative;
         }
 
         .noise {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             pointer-events: none; z-index: 9999; opacity: 0.03;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
@@ -66,6 +73,11 @@
             position: fixed; width: 100%; padding: 2rem 5%;
             display: flex; justify-content: space-between; align-items: center;
             z-index: 100; mix-blend-mode: difference;
+            transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        nav.hidden {
+            transform: translateY(-100%); 
         }
 
         .logo {
@@ -79,7 +91,6 @@
             text-transform: uppercase; letter-spacing: 2px; position: relative;
         }
 
-        /* --- ЗОЛОТАЯ ПОЛОСКА ДЛЯ НАВИГАЦИИ (CSS) --- */
         .nav-links a::after {
             content: '';
             position: absolute;
@@ -103,6 +114,7 @@
         .hero {
             height: 100vh; display: flex; flex-direction: column;
             justify-content: center; padding: 0 10%; position: relative;
+            overflow: hidden;
         }
 
         .hero-bg {
@@ -111,20 +123,28 @@
             z-index: -1;
         }
 
+        .hero-bg-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            font-family: var(--font-heading); font-size: 15vw; color: transparent; 
+            -webkit-text-stroke: 1px rgba(255,255,255,0.03); z-index: 0; user-select: none;
+            white-space: nowrap;
+        }
+
         .hero h1 { font-family: var(--font-heading); font-size: 5.5rem; font-weight: 400; line-height: 1.1; margin-bottom: 2rem; position: relative; z-index: 1; }
         .hero h1 span { display: block; color: var(--accent); font-style: italic; font-size: 3.5rem; margin-top: 1rem; }
         .hero p { font-size: 1.1rem; color: var(--text-muted); max-width: 550px; margin-bottom: 3rem; position: relative; z-index: 1; }
 
-        .projects { padding: 10rem 10%; background-color: var(--bg-light); }
+        .projects { padding: 10rem 10%; background-color: var(--bg-light); overflow: hidden; }
         .section-title { font-family: var(--font-heading); font-size: 3.5rem; margin-bottom: 6rem; font-weight: 400; }
 
-        .project-card { display: flex; gap: 4rem; margin-bottom: 8rem; align-items: center; }
+        .project-card { display: flex; gap: 4rem; margin-bottom: 8rem; align-items: center; width: 100%; }
         .project-card:nth-child(even) { flex-direction: row-reverse; }
 
         .mockup-wrapper {
             flex: 1.5;
             aspect-ratio: 16/10;
             perspective: 1000px;
+            width: 100%;
         }
 
         .mockup-window {
@@ -156,9 +176,6 @@
         .dot.y { background: rgba(255, 189, 46, 0.5); }
         .dot.g { background: rgba(39, 201, 63, 0.5); }
 
-        /* =========================================
-           ДИЗАЙН IKODE С ЦВЕТОВЫМИ АКЦЕНТАМИ
-           ========================================= */
         .ikode-site { 
             flex-grow: 1; background: #000; display: flex; flex-direction: column; font-family: 'Montserrat', sans-serif; overflow: hidden; 
         }
@@ -220,9 +237,6 @@
         }
         .ikode-card-btn:hover { background: var(--color-ikode); color: #000; }
 
-        /* =========================================
-           ДИЗАЙН KODITOK С ЦВЕТОВЫМИ АКЦЕНТАМИ
-           ========================================= */
         .koditok-site { 
             flex-grow: 1; background: #000; display: flex; flex-direction: column; font-family: 'Montserrat', sans-serif; overflow: hidden; 
         }
@@ -281,8 +295,7 @@
             font-size: 0.45rem; font-weight: 700; margin-top: auto; color: #c4a1ff;
         }
 
-        /* Общие стили информации о проекте */
-        .project-info { flex: 1; }
+        .project-info { flex: 1; width: 100%; }
         .project-info h3 { font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 1rem; }
         .project-info p { color: var(--text-muted); margin-bottom: 2rem; line-height: 1.8; font-size: 0.95rem; }
         .project-link {
@@ -297,40 +310,75 @@
         .order-client { color: var(--text-main); }
         .order-type { color: var(--accent); font-style: italic; }
 
-        .contact { height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background-color: var(--bg-dark); }
-       .contact-email {
-    font-family: var(--font-heading);
-    font-size: 7vw;
-    color: var(--bg-dark); /* Цвет фона, маскирующий заливку */
-    /* Используем text-shadow для создания безупречного внешнего контура */
-    text-shadow:
-        -1px -1px 0 var(--text-main),
-         1px -1px 0 var(--text-main),
-        -1px  1px 0 var(--text-main),
-         1px  1px 0 var(--text-main);
-    text-decoration: none;
-    transition: all 0.5s ease;
-    margin-bottom: 2rem;
-    letter-spacing: 2px;
-}
+        .contact { height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background-color: var(--bg-dark); overflow: hidden; width: 100%; padding: 0 5%; }
+        .contact-email {
+            font-family: var(--font-heading);
+            font-size: 7vw;
+            color: var(--bg-dark); 
+            text-shadow:
+                -1px -1px 0 var(--text-main),
+                 1px -1px 0 var(--text-main),
+                -1px  1px 0 var(--text-main),
+                 1px  1px 0 var(--text-main);
+            text-decoration: none;
+            transition: all 0.5s ease;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+            word-break: break-all;
+            max-width: 100%;
+        }
 
-.contact-email:hover {
-    color: var(--text-main);
-    text-shadow: none; /* Убираем контур при наведении */
-}
+        .contact-email:hover {
+            color: var(--text-main);
+            text-shadow: none; 
+        }
         footer { 
-    padding: 2rem; 
-    text-align: center; 
-    color: var(--text-muted); 
-    font-size: 0.8rem; 
-    letter-spacing: 1px; 
-    border-top: 1px solid rgba(255,255,255,0.05);
-    margin-top: 10vh; /* Отступ перенесен наверх */
-}
+            padding: 2rem 5%; 
+            text-align: center; 
+            color: var(--text-muted); 
+            font-size: 0.8rem; 
+            letter-spacing: 1px; 
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 10vh; 
+            width: 100%;
+        }
+
+        /* Responsive Adjustments */
         @media (max-width: 1024px) {
             .project-card, .project-card:nth-child(even) { flex-direction: column; gap: 2rem; }
             .hero h1 { font-size: 4rem; }
             .cursor { display: none; } 
+            * { cursor: auto !important; } 
+        }
+
+        @media (max-width: 768px) {
+            nav { flex-direction: column; gap: 1rem; padding: 1.5rem 5%; text-align: center; }
+            .nav-links { gap: 1rem; justify-content: center; flex-wrap: wrap; }
+            
+            .hero { padding: 0 5%; text-align: center; }
+            .hero h1 { 
+                font-size: 2.2rem; 
+                margin-top: 2rem; 
+                word-wrap: break-word; 
+                hyphens: auto;
+            }
+            .hero h1 span { font-size: 1.6rem; }
+            .hero p { font-size: 0.95rem; margin: 0 auto 3rem auto; }
+            
+            .projects { padding: 4rem 5%; }
+            .section-title { 
+                font-size: 1.8rem; 
+                margin-bottom: 3rem; 
+                text-align: center; 
+                word-wrap: break-word;
+            }
+            
+            .project-card { margin-bottom: 5rem; }
+            .project-info h3 { font-size: 1.6rem; word-wrap: break-word; }
+            
+            .ikode-grid, .koditok-grid { grid-template-columns: 1fr; }
+            
+            .contact-email { font-size: 12vw; } 
         }
     </style>
 </head>
@@ -343,13 +391,14 @@
         <a href="#" class="logo interactive">GYOKURO.</a>
         <div class="nav-links">
             <a href="#projects" class="interactive">Проекты</a>
-            <a href="photo.html" class="interactive">Фотография</a> <a href="#contact" class="interactive">Связаться</a>
+            <a href="photo.html" class="interactive">Фотография</a> 
+            <a href="#contact" class="interactive">Связаться</a>
         </div>
     </nav>
 
     <header class="hero">
         <div class="hero-bg"></div>
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--font-heading); font-size: 15vw; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03); z-index: 0; user-select: none;">GYOKURO</div>
+        <div class="hero-bg-text">GYOKURO</div>
         <div class="reveal">
             <h1>Gyokuro. <br><span>Архитектура решений</span></h1>
             <p>Проектирование и разработка современных веб-интерфейсов. Строгий код, выверенная эстетика и безупречная логика.</p>
@@ -391,7 +440,7 @@
                                 <div class="ikode-card-item">
                                     <div class="ikode-card-age">6+ ЛЕТ</div>
                                     <div class="ikode-card-body">
-                                        <div class="ikode-card-title">>_ Создание игры с нуля</div>
+                      <div class="ikode-card-title">>_ Создание игры с нуля</div>
                                         <div class="ikode-card-desc">Участники проходят все этапы разработки простой игры.</div>
                                     </div>
                                     <div class="ikode-card-btn">ЗАПИСАТЬСЯ</div>
@@ -431,7 +480,7 @@
                             <h3>Мастер-классы интенсива</h3>
                             <p>Наша основная идея — зажечь ребят, показать, что программирование может быть увлекательным.</p>
                             <div class="koditok-grid">
-                                <div class="                                <div class="koditok-card-item">
+                                <div class="koditok-card-item">
                                     <div class="koditok-card-top">
                                         <div class="koditok-age-pill">6-8 лет</div>
                                         <div class="koditok-icon yellow">⚡</div>
@@ -482,8 +531,10 @@
         const interactives = document.querySelectorAll('.interactive, a, button');
 
         document.addEventListener('mousemove', e => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
+            if (window.innerWidth > 1024) {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            }
         });
 
         interactives.forEach(el => {
@@ -500,30 +551,43 @@
             });
         }, observerOptions);
 
-        // Плавный скролл с заданным отступом (offset)
-document.querySelectorAll('.nav-links a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('href');
-        if (targetId === '#') return;
+        document.querySelectorAll('.nav-links a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
 
-        const targetElement = document.querySelector(targetId);
-        if (targetElement) {
-            const offset = 90; // Смещение на 250px ниже начала секции
-            const elementPosition = targetElement.getBoundingClientRect().top;
-            
-            // Знак "плюс" обеспечивает прокрутку ниже начала блока
-            const offsetPosition = elementPosition + window.pageYOffset + offset;
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const offset = 90; 
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    
+                    const offsetPosition = elementPosition + window.pageYOffset + offset;
 
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: "smooth"
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth"
+                    });
+                }
             });
-        }
-    });
-});
+        });
 
         document.querySelectorAll('.reveal').forEach(el => { observer.observe(el); });
+
+        // Логика скрытия навигации при скролле вниз
+        let lastScrollTop = 0;
+        const navbar = document.querySelector('nav');
+
+        window.addEventListener('scroll', () => {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                navbar.classList.add('hidden');
+            } else {
+                navbar.classList.remove('hidden');
+            }
+            lastScrollTop = scrollTop;
+        });
     </script>
 </body>
 </html>
