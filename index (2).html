@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core SMM | Ultimate Glass Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --apple-bg: #f5f5f7;
+            --apple-text: #1d1d1f;
+            --apple-text-muted: #86868b;
+            --apple-blue: #0066cc;
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-highlight: rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --glass-blur: 40px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background-color: var(--apple-bg);
+            color: var(--apple-text);
+            margin: 0;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Анимированный многослойный фон */
+        .ambient-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2;
+            background: linear-gradient(135deg, #e0eaf5 0%, #f5f5f7 50%, #fdfbfb 100%);
+        }
+
+        .orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+        .orb-1 { width: 40vw; height: 40vw; background: #cce0ff; top: -10%; left: -10%; animation-delay: 0s; }
+        .orb-2 { width: 50vw; height: 50vw; background: #f0e6ff; bottom: -20%; right: -10%; animation-delay: -5s; }
+        .orb-3 { width: 30vw; height: 30vw; background: #ffe6f0; top: 40%; left: 40%; animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(5%, 5%) scale(1.05); }
+            66% { transform: translate(-2%, 8%) scale(0.95); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        #particle-canvas {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* Матовое стекло */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur)) saturate(200%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(200%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid var(--glass-highlight);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+        }
+
+        /* 3D Интерактивность */
+        .tilt-card { transform-style: preserve-3d; transform: perspective(1000px); }
+        .tilt-card-inner { transform: translateZ(30px); }
+
+        /* Элементы управления */
+        .btn {
+            position: relative; overflow: hidden; border-radius: 999px; padding: 10px 24px;
+            font-weight: 500; font-size: 0.875rem; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+            outline: none; border: none;
+        }
+        .btn::after {
+            content: ''; position: absolute; top: 50%; left: 50%; width: 5px; height: 5px;
+            background: rgba(255, 255, 255, 0.5); opacity: 0; border-radius: 100%;
+            transform: scale(1) translate(-50%, -50%); transform-origin: 50% 50%;
+        }
+        .btn:active::after { animation: ripple 0.6s ease-out; }
+
+        @keyframes ripple {
+            0% { transform: scale(0) translate(-50%, -50%); opacity: 0.5; }
+            100% { transform: scale(20) translate(-50%, -50%); opacity: 0; }
+        }
+
+        .btn-primary { background-color: var(--apple-text); color: #ffffff; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); }
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.8); color: var(--apple-text); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.9); transform: translateY(-2px); }
+        
+        .btn.loading { color: transparent !important; pointer-events: none; }
+        .btn.loading::before {
+            content: ''; position: absolute; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        .btn-secondary.loading::before { border-top-color: var(--apple-text); border-color: rgba(0,0,0,0.1); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 14px; padding: 14px 18px; color: var(--apple-text);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); font-size: 0.9rem;
+        }
+        .glass-input:focus {
+            outline: none; background: #ffffff; border-color: var(--apple-blue);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.01), 0 0 0 4px rgba(0, 102, 204, 0.15); transform: translateY(-1px);
+        }
+
+        /* Навигация */
+        .nav-item {
+            padding: 12px 18px; margin-bottom: 8px; border-radius: 14px; color: var(--apple-text-muted);
+            font-weight: 500; font-size: 0.9rem; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer; display: flex; align-items: center; position: relative; overflow: hidden;
+        }
+        .nav-item::before {
+            content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px;
+            background: var(--apple-blue); transform: scaleY(0); transition: transform 0.3s ease; border-radius: 0 4px 4px 0;
+        }
+        .nav-item:hover { color: var(--apple-text); background: rgba(255, 255, 255, 0.4); transform: translateX(4px); }
+        .nav-item.active {
+            color: var(--apple-text); background: rgba(255, 255, 255, 0.7); box-shadow: 0 4px 15px rgba(0,0,0,0.03); font-weight: 600;
+        }
+        .nav-item.active::before { transform: scaleY(0.6); }
+
+        /* ИСПРАВЛЕННАЯ ЛОГИКА МАРШРУТИЗАЦИИ (Без конфликтов flex) */
+        .view-section {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95) translateY(20px) rotateX(-5deg);
+            transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.1),
+                        visibility 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.1),
+                        transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.1);
+            z-index: 0;
+        }
+        
+        .view-section.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1) translateY(0) rotateX(0);
+            z-index: 10;
+        }
+
+        /* Таблица Контент-матрицы */
+        .glass-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .glass-table th {
+            padding: 16px; text-align: left; font-size: 0.75rem; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--apple-text-muted); font-weight: 600;
+            border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: color 0.3s;
+        }
+        .glass-table th:hover { color: var(--apple-text); }
+        .glass-table td { padding: 16px; font-size: 0.875rem; border-bottom: 1px solid rgba(0,0,0,0.03); transition: background 0.3s; }
+        .glass-table tr { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s; cursor: pointer; }
+        .glass-table tbody tr:hover {
+            transform: scale(1.01); background: rgba(255,255,255,0.6); box-shadow: 0 4px 15px rgba(0,0,0,0.02); border-radius: 12px;
+        }
+        .glass-table tbody tr:hover td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        .glass-table tbody tr:hover td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); border: 2px solid transparent; background-clip: padding-box; }
+
+        .toast-container { position: fixed; bottom: 32px; right: 32px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.9);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); color: var(--apple-text); padding: 14px 20px;
+            border-radius: 16px; font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 12px;
+            transform: translateX(120%) scale(0.9); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show { transform: translateX(0) scale(1); opacity: 1; }
+        .toast-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .toast-success .toast-icon { background: #34c759; color: white; }
+
+        .status-badge { padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .bg-pending { background: rgba(0, 102, 204, 0.1); color: #0066cc; }
+        .bg-pending .status-dot { background: #0066cc; animation: pulse 2s infinite; }
+        .bg-done { background: rgba(52, 199, 89, 0.1); color: #28a745; }
+        .bg-done .status-dot { background: #34c759; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(0, 102, 204, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 102, 204, 0); }
+        }
+
+        .toggle-switch { position: relative; width: 44px; height: 24px; background: rgba(0,0,0,0.1); border-radius: 24px; cursor: pointer; transition: background 0.3s; }
+        .toggle-switch.active { background: #34c759; }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+            background: #fff; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1.2);
+        }
+        .toggle-switch.active::after { transform: translateX(20px); }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-canvas"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="flex h-screen p-4 lg:p-6 gap-6 relative z-10 max-w-[1800px] mx-auto">
+        
+        <aside class="w-72 glass-panel flex flex-col shrink-0 overflow-hidden relative">
+            <div class="p-8 pb-4 relative z-10">
+                <div class="w-12 h-12 bg-gradient-to-br from-gray-800 to-black rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-[var(--apple-text)]">SMM Core</h1>
+                <p class="text-xs text-[var(--apple-text-muted)] mt-1 font-semibold uppercase tracking-widest opacity-80">Quantum Engine</p>
+            </div>
+            
+            <nav class="flex-1 px-5 py-4 relative z-10" id="main-nav">
+                <div class="nav-item active" data-target="dashboard">
+                    <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    Обзор системы
+                </div>
+                <div class="nav-item" data-target="matrix">
+                    <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Матрица
+                </div>
+                <div class="nav-item" data-target="intelligence">
+                    <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    Интеллект
+                </div>
+                <div class="nav-item" data-target="sources">
+                    <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Источники
+                </div>
+                <div class="nav-item" data-target="settings">
+                    <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Настройки
+                </div>
+            </nav>
+
+            <div class="p-6 mt-auto relative z-10 border-t border-[var(--glass-border)]">
+                <div class="p-4 rounded-[20px] bg-white/40 border border-white/60 flex items-center space-x-4 shadow-sm">
+                    <div class="relative">
+                        <img src="https://ui-avatars.com/api/?name=Oleg&background=000&color=fff&rounded=true" class="w-10 h-10 rounded-full shadow-md" alt="Avatar">
+                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-[var(--apple-text)]">Мистер Олег</p>
+                        <p class="text-[0.65rem] text-[var(--apple-text-muted)] font-bold uppercase tracking-widest mt-0.5">Администратор</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 relative perspective-1000">
+            
+            <div id="view-dashboard" class="view-section active flex flex-col px-4 overflow-y-auto">
+                <header class="flex justify-between items-end mb-10 pt-6">
+                    <div>
+                        <h2 class="text-5xl font-bold tracking-tight">Сводка</h2>
+                        <p class="text-base text-[var(--apple-text-muted)] mt-2 font-medium">Мониторинг потоков автоматизации</p>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button class="btn btn-secondary" onclick="simulateLoad(this, 'Обновление данных...')">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Синхронизация
+                        </button>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+                    <div class="glass-panel tilt-card p-8 flex flex-col justify-between h-48 cursor-pointer">
+                        <div class="tilt-card-inner flex justify-between items-start">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <span class="text-green-500 text-sm font-bold bg-green-100 px-3 py-1 rounded-full">+12%</span>
+                        </div>
+                        <div class="tilt-card-inner">
+                            <p class="text-[var(--apple-text-muted)] text-sm font-bold uppercase tracking-wider mb-1">Опубликовано</p>
+                            <p class="text-5xl font-bold tracking-tight" id="count-pub">0</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel tilt-card p-8 flex flex-col justify-between h-48 cursor-pointer" onclick="router('matrix')">
+                        <div class="tilt-card-inner flex justify-between items-start">
+                            <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="tilt-card-inner">
+                            <p class="text-[var(--apple-text-muted)] text-sm font-bold uppercase tracking-wider mb-1">В очереди</p>
+                            <p class="text-5xl font-bold tracking-tight" id="count-queue">0</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel tilt-card p-8 flex flex-col justify-between h-48">
+                        <div class="tilt-card-inner flex justify-between items-start">
+                            <div class="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="tilt-card-inner">
+                            <p class="text-[var(--apple-text-muted)] text-sm font-bold uppercase tracking-wider mb-1">Интеллект</p>
+                            <p class="text-3xl font-bold tracking-tight mt-2">GigaChat Pro</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold">Ближайшие публикации</h3>
+                        <button class="text-[var(--apple-blue)] text-sm font-semibold hover:underline" onclick="router('matrix')">Показать все</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-5 rounded-[20px] bg-white/50 border border-white/60 hover:bg-white/80 transition flex justify-between items-center cursor-pointer shadow-sm">
+                            <div class="flex items-center gap-5">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-md">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-lg">Промо-ролик: Робототехника</h4>
+                                    <p class="text-sm text-[var(--apple-text-muted)] font-medium mt-0.5">Генерация: "Агрессивный маркетинг"</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-lg">18:00</p>
+                                <div class="status-badge bg-pending mt-1"><span class="status-dot"></span> Подготовка LLM</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-matrix" class="view-section flex flex-col px-4 pb-6">
+                <header class="flex justify-between items-end mb-8 pt-6 shrink-0">
+                    <div>
+                        <h2 class="text-5xl font-bold tracking-tight">Матрица</h2>
+                        <p class="text-base text-[var(--apple-text-muted)] mt-2 font-medium">План публикаций на 30 дней</p>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button class="btn btn-secondary" onclick="simulateLoad(this, 'Чтение JSON...', populateMatrix)">Импорт плана</button>
+                        <button class="btn btn-primary">Создать слот</button>
+                    </div>
+                </header>
+
+                <div class="glass-panel flex-1 overflow-hidden flex flex-col border border-[var(--glass-border)]">
+                    <div class="overflow-y-auto flex-1 p-2">
+                        <table class="glass-table w-full">
+                            <thead class="sticky top-0 bg-white/80 backdrop-blur-md z-10 rounded-xl shadow-sm">
+                                <tr>
+                                    <th>Дата и время</th>
+                                    <th>Контент</th>
+                                    <th>Промпт</th>
+                                    <th>Платформа</th>
+                                    <th class="text-right">Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrix-tbody"></tbody>
+                        </table>
+                        <div id="matrix-empty" class="h-full flex flex-col items-center justify-center text-center opacity-50 py-20">
+                            <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <p class="text-xl font-bold">Очередь пуста</p>
+                            <p class="mt-2 text-sm font-medium">Сгенерируйте план или нажмите «Импорт»</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-intelligence" class="view-section flex flex-col px-4 overflow-y-auto">
+                <header class="mb-10 pt-6">
+                    <h2 class="text-5xl font-bold tracking-tight">Интеллект</h2>
+                    <p class="text-base text-[var(--apple-text-muted)] mt-2 font-medium">Конфигурация нейросетевого ядра</p>
+                </header>
+                
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+                    <div class="glass-panel p-8 tilt-card">
+                        <div class="tilt-card-inner">
+                            <h3 class="text-2xl font-bold mb-4">Системный Tone of Voice</h3>
+                            <p class="text-sm text-[var(--apple-text-muted)] font-medium mb-6">Эта инструкция подается в LLM перед каждым медиафайлом.</p>
+                            <textarea class="glass-input h-64 resize-none mb-6 font-mono text-sm leading-relaxed" placeholder="Введите системный промпт..."></textarea>
+                            <div class="flex justify-end">
+                                <button class="btn btn-primary" onclick="simulateLoad(this, 'Сохранение параметров...')">Записать в ядро</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div class="glass-panel p-8 tilt-card">
+                            <div class="tilt-card-inner">
+                                <h3 class="text-2xl font-bold mb-6">Параметры генерации</h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <label class="text-sm font-bold text-[var(--apple-text-muted)] uppercase tracking-wider">Температура (Креативность)</label>
+                                            <span class="font-bold bg-white/50 px-2 py-1 rounded-md" id="temp-val">0.7</span>
+                                        </div>
+                                        <input type="range" min="0" max="1" step="0.1" value="0.7" class="w-full accent-black cursor-pointer" oninput="document.getElementById('temp-val').innerText=this.value">
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-white/30 rounded-xl border border-white/50">
+                                        <div>
+                                            <p class="font-bold text-sm">Генерация хештегов</p>
+                                            <p class="text-xs text-[var(--apple-text-muted)] font-medium">Автоматический анализ медиа и подбор тегов</p>
+                                        </div>
+                                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-sources" class="view-section flex flex-col px-4 overflow-y-auto">
+                <header class="mb-10 pt-6">
+                    <h2 class="text-5xl font-bold tracking-tight">Источники</h2>
+                    <p class="text-base text-[var(--apple-text-muted)] mt-2 font-medium">Маршрутизация контента (I/O)</p>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                    <div class="glass-panel p-8 relative overflow-hidden">
+                        <div class="w-14 h-14 bg-white shadow-md rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                            <svg class="w-7 h-7 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2 relative z-10">Локальный ПК</h3>
+                        <p class="text-[var(--apple-text-muted)] font-medium text-sm mb-8 relative z-10">Прямое подключение к файловой системе для забора контента.</p>
+                        <div class="space-y-4 relative z-10">
+                            <input type="text" class="glass-input text-sm font-mono bg-white/30" value="C:\Users\Oleg\Media\" readonly>
+                            <button class="btn btn-secondary w-full py-3">Изменить директорию</button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-8 relative overflow-hidden">
+                        <div class="w-14 h-14 bg-white shadow-md rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                            <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2 relative z-10">S3 Облако</h3>
+                        <p class="text-[var(--apple-text-muted)] font-medium text-sm mb-8 relative z-10">Интеграция с удаленными бакетами.</p>
+                        <div class="space-y-4 relative z-10">
+                            <input type="password" class="glass-input text-sm bg-white/30" placeholder="AWS Access Key ID" value="*************">
+                            <button class="btn btn-primary w-full py-3" onclick="simulateLoad(this, 'Проверка ключей...')">Тест соединения</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="view-section flex flex-col px-4 overflow-y-auto">
+                <header class="mb-10 pt-6">
+                    <h2 class="text-5xl font-bold tracking-tight">Настройки ядра</h2>
+                    <p class="text-base text-[var(--apple-text-muted)] mt-2 font-medium">Системные параметры и обслуживание</p>
+                </header>
+                
+                <div class="glass-panel p-8 max-w-4xl mb-10">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between p-5 bg-white/30 rounded-2xl border border-white/50">
+                            <div>
+                                <h4 class="font-bold text-lg">Автоматические водяные знаки</h4>
+                                <p class="text-sm text-[var(--apple-text-muted)] font-medium mt-1">Ядро будет накладывать логотип перед отправкой.</p>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-5 bg-white/30 rounded-2xl border border-white/50">
+                            <div>
+                                <h4 class="font-bold text-lg">Цикл Оркестратора</h4>
+                                <p class="text-sm text-[var(--apple-text-muted)] font-medium mt-1">Интервал опроса базы данных.</p>
+                            </div>
+                            <select class="glass-input w-48 font-bold cursor-pointer">
+                                <option>1 минута</option>
+                                <option selected>5 минут</option>
+                                <option>15 минут</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-8 mt-8 border-t border-black/10">
+                            <h4 class="font-bold text-xl text-red-600 mb-4">Опасная зона</h4>
+                            <div class="flex gap-4">
+                                <button class="btn btn-secondary border-red-200 text-red-600 hover:bg-red-50" onclick="simulateLoad(this, 'Очистка кэша...')">Сброс кэша</button>
+                                <button class="btn btn-secondary border-red-200 text-red-600 hover:bg-red-50" onclick="simulateLoad(this, 'Перезапуск ядра...')">Рестарт воркеров</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="toast-container" id="toast-rack"></div>
+
+    <script>
+        // Инициализация частиц
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles;
+
+        function initParticles() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: Math.random() * width, y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
+                    size: Math.random() * 2 + 1, alpha: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(100, 150, 255, ${p.alpha})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(drawParticles);
+        }
+        
+        window.addEventListener('resize', initParticles);
+        initParticles();
+        drawParticles();
+
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            if(!obj) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function spawnToast(message, type = 'success') {
+            const rack = document.getElementById('toast-rack');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-icon ${type === 'success' ? 'bg-green-500' : 'bg-blue-500'} text-white">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <span>${message}</span>
+            `;
+            rack.appendChild(toast);
+            void toast.offsetWidth; // Trigger reflow
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function simulateLoad(btn, msg, callback = null) {
+            if(btn.classList.contains('loading')) return;
+            const originalText = btn.innerHTML;
+            const originalWidth = btn.offsetWidth;
+            btn.style.width = originalWidth + 'px';
+            btn.classList.add('loading');
+            
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.innerHTML = originalText;
+                btn.style.width = 'auto';
+                spawnToast(msg);
+                if(callback) callback();
+            }, 1200);
+        }
+
+        // ИСПРАВЛЕННЫЙ МАРШРУТИЗАТОР
+        let currentView = 'dashboard';
+        function router(target) {
+            if (target === currentView) return;
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const activeNav = document.querySelector(`.nav-item[data-target="${target}"]`);
+            if(activeNav) activeNav.classList.add('active');
+
+            // Принудительно очищаем все экраны от активности
+            document.querySelectorAll('.view-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            
+            // Активируем нужный экран
+            const newSection = document.getElementById(`view-${target}`);
+            if(newSection) newSection.classList.add('active');
+
+            currentView = target;
+
+            if(target === 'dashboard') {
+                animateValue('count-pub', 0, 142, 1000);
+                animateValue('count-queue', 0, 36, 1000);
+            }
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => router(item.getAttribute('data-target')));
+        });
+
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+            });
+        });
+
+        function populateMatrix() {
+            document.getElementById('matrix-empty').style.display = 'none';
+            const tbody = document.getElementById('matrix-tbody');
+            tbody.innerHTML = '';
+            
+            const platforms = ['TG, VK', 'TG', 'VK'];
+            const statuses = [
+                { class: 'bg-pending', text: 'Ожидание LLM', dot: true },
+                { class: 'bg-done', text: 'Запланировано', dot: false }
+            ];
+
+            for(let i=1; i<=12; i++) {
+                const status = i < 4 ? statuses[0] : statuses[1];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-bold text-[var(--apple-text)]">2026-05-${String(i).padStart(2, '0')} 18:00</td>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center font-bold text-[0.65rem] text-gray-500 border border-black/5">MP4</div>
+                            <span class="font-medium text-sm truncate w-32">/promo_v${i}.mp4</span>
+                        </div>
+                    </td>
+                    <td class="text-[var(--apple-text-muted)] text-sm italic truncate w-48">Сгенерировать продающий пост...</td>
+                    <td class="font-bold text-sm">${platforms[i%3]}</td>
+                    <td class="text-right">
+                        <div class="status-badge ${status.class}">
+                            ${status.dot ? '<span class="status-dot"></span>' : ''} ${status.text}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        setTimeout(() => {
+            animateValue('count-pub', 0, 142, 1500);
+            animateValue('count-queue', 0, 36, 1500);
+            spawnToast('Интерфейс откалиброван', 'success');
+        }, 500);
+
+    </script>
+</body>
+</html>
